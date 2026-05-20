@@ -1,0 +1,137 @@
+syntax = "proto3";
+
+package train.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/azarenkov/ap2-final-gen/train/v1;trainv1";
+
+service TrainService {
+    rpc CreateTrain(CreateTrainRequest) returns (Train);
+    rpc GetTrainById(GetTrainByIdRequest) returns (Train);
+    rpc UpdateTrain(UpdateTrainRequest) returns (Train);
+    rpc DeleteTrain(DeleteTrainRequest) returns (google.protobuf.Empty);
+    rpc SearchTrains(SearchTrainsRequest) returns (SearchTrainsResponse);
+    rpc GetTrainSchedule(GetTrainScheduleRequest) returns (TrainSchedule);
+
+    rpc CreateRoute(CreateRouteRequest) returns (Route);
+    rpc GetRouteById(GetRouteByIdRequest) returns (Route);
+    rpc UpdateRoute(UpdateRouteRequest) returns (Route);
+    rpc DeleteRoute(DeleteRouteRequest) returns (google.protobuf.Empty);
+
+    rpc GetAvailableSeats(GetAvailableSeatsRequest) returns (AvailableSeatsResponse);
+    rpc UpdateSeatAvailability(UpdateSeatAvailabilityRequest) returns (UpdateSeatAvailabilityResponse);
+}
+
+// ----- Entities -----
+
+message Train {
+    string id = 1;
+    string code = 2;            // human-friendly code like "IC-101"
+    string name = 3;
+    string route_id = 4;
+    google.protobuf.Timestamp departure_time = 5;
+    google.protobuf.Timestamp arrival_time = 6;
+    int32 total_seats = 7;
+    int32 available_seats = 8;
+    int64 price_cents = 9;
+    string status = 10;         // SCHEDULED | DELAYED | CANCELLED | DEPARTED | ARRIVED
+    google.protobuf.Timestamp created_at = 11;
+    google.protobuf.Timestamp updated_at = 12;
+}
+
+message Route {
+    string id = 1;
+    string origin = 2;
+    string destination = 3;
+    int32 distance_km = 4;
+    int32 estimated_minutes = 5;
+}
+
+message TrainSchedule {
+    string train_id = 1;
+    repeated ScheduleStop stops = 2;
+}
+
+message ScheduleStop {
+    string station = 1;
+    google.protobuf.Timestamp arrival = 2;
+    google.protobuf.Timestamp departure = 3;
+}
+
+// ----- Requests / responses -----
+
+message CreateTrainRequest {
+    string code = 1;
+    string name = 2;
+    string route_id = 3;
+    google.protobuf.Timestamp departure_time = 4;
+    google.protobuf.Timestamp arrival_time = 5;
+    int32 total_seats = 6;
+    int64 price_cents = 7;
+}
+
+message GetTrainByIdRequest { string id = 1; }
+
+message UpdateTrainRequest {
+    string id = 1;
+    string name = 2;
+    google.protobuf.Timestamp departure_time = 3;
+    google.protobuf.Timestamp arrival_time = 4;
+    int64 price_cents = 5;
+    string status = 6;
+}
+
+message DeleteTrainRequest { string id = 1; }
+
+message SearchTrainsRequest {
+    string origin = 1;
+    string destination = 2;
+    google.protobuf.Timestamp departure_after = 3;
+    google.protobuf.Timestamp departure_before = 4;
+    int32 page = 5;
+    int32 page_size = 6;
+}
+
+message SearchTrainsResponse {
+    repeated Train trains = 1;
+    int32 total = 2;
+}
+
+message GetTrainScheduleRequest { string train_id = 1; }
+
+message CreateRouteRequest {
+    string origin = 1;
+    string destination = 2;
+    int32 distance_km = 3;
+    int32 estimated_minutes = 4;
+}
+
+message GetRouteByIdRequest { string id = 1; }
+
+message UpdateRouteRequest {
+    string id = 1;
+    int32 distance_km = 2;
+    int32 estimated_minutes = 3;
+}
+
+message DeleteRouteRequest { string id = 1; }
+
+message GetAvailableSeatsRequest { string train_id = 1; }
+
+message AvailableSeatsResponse {
+    string train_id = 1;
+    int32 total_seats = 2;
+    int32 available_seats = 3;
+}
+
+message UpdateSeatAvailabilityRequest {
+    string train_id = 1;
+    int32 delta = 2;            // positive (released) or negative (reserved)
+}
+
+message UpdateSeatAvailabilityResponse {
+    string train_id = 1;
+    int32 available_seats = 2;
+}

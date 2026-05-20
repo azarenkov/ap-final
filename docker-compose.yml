@@ -1,0 +1,259 @@
+name: train-tickets-final
+
+services:
+  # ---------- Databases ----------
+  train-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: train_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ["5432:5432"]
+    volumes:
+      - train_db_data:/var/lib/postgresql/data
+      - ./train-service/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d train_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  user-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: user_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ["5433:5432"]
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+      - ./user-service/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d user_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  booking-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: booking_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ["5434:5432"]
+    volumes:
+      - booking_db_data:/var/lib/postgresql/data
+      - ./booking-service/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+      - ./booking-service/migrations/002_audit.sql:/docker-entrypoint-initdb.d/002_audit.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d booking_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  notification-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ["5435:5432"]
+    volumes:
+      - notification_db_data:/var/lib/postgresql/data
+      - ./notification-service/migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d notification_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ---------- Infra ----------
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["6379:6379"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  nats:
+    image: nats:2.10-alpine
+    command: ["-js"]
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI — http://localhost:8025
+
+  # ---------- Observability ----------
+  jaeger:
+    image: jaegertracing/all-in-one:1.60
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "16686:16686"   # UI
+      - "4318:4318"     # OTLP/HTTP
+      - "4317:4317"     # OTLP/gRPC
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports: ["9090:9090"]
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.2.1
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    ports: ["3100:3100"]
+    restart: unless-stopped
+
+  promtail:
+    image: grafana/promtail:3.2.1
+    volumes:
+      - ./observability/promtail/config.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: ["-config.file=/etc/promtail/config.yml"]
+    depends_on:
+      loki: { condition: service_started }
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_USERS_DEFAULT_THEME: dark
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports: ["3001:3000"]
+    depends_on:
+      prometheus: { condition: service_started }
+      loki:       { condition: service_started }
+      jaeger:     { condition: service_started }
+    restart: unless-stopped
+
+  # ---------- Microservices ----------
+  train-service:
+    build: { context: ., dockerfile: train-service/Dockerfile }
+    environment:
+      TRAIN_GRPC_ADDR: ":50051"
+      TRAIN_METRICS_ADDR: ":9091"
+      TRAIN_DATABASE_URL: "postgres://postgres:postgres@train-db:5432/train_db?sslmode=disable"
+      REDIS_ADDR: "redis:6379"
+      NATS_URL: "nats://nats:4222"
+      OTLP_ENDPOINT: "jaeger:4318"
+    depends_on:
+      train-db: { condition: service_healthy }
+      redis:    { condition: service_healthy }
+      nats:     { condition: service_started }
+    ports: ["50051:50051"]
+    restart: unless-stopped
+
+  user-service:
+    build: { context: ., dockerfile: user-service/Dockerfile }
+    environment:
+      USER_GRPC_ADDR: ":50052"
+      USER_METRICS_ADDR: ":9092"
+      USER_DATABASE_URL: "postgres://postgres:postgres@user-db:5432/user_db?sslmode=disable"
+      JWT_SECRET: "${JWT_SECRET:-dev-secret-change-me}"
+      BOOKING_SERVICE_ADDR: "booking-service:50053"
+      OTLP_ENDPOINT: "jaeger:4318"
+    depends_on:
+      user-db: { condition: service_healthy }
+    ports: ["50052:50052"]
+    restart: unless-stopped
+
+  booking-service:
+    build: { context: ., dockerfile: booking-service/Dockerfile }
+    environment:
+      BOOKING_GRPC_ADDR: ":50053"
+      BOOKING_METRICS_ADDR: ":9093"
+      BOOKING_DATABASE_URL: "postgres://postgres:postgres@booking-db:5432/booking_db?sslmode=disable"
+      TRAIN_SERVICE_ADDR: "train-service:50051"
+      NATS_URL: "nats://nats:4222"
+      OTLP_ENDPOINT: "jaeger:4318"
+    depends_on:
+      booking-db: { condition: service_healthy }
+      nats:       { condition: service_started }
+      train-service: { condition: service_started }
+    ports: ["50053:50053"]
+    restart: unless-stopped
+
+  notification-service:
+    build: { context: ., dockerfile: notification-service/Dockerfile }
+    environment:
+      NOTIFICATION_GRPC_ADDR: ":50054"
+      NOTIFICATION_METRICS_ADDR: ":9094"
+      NOTIFICATION_DATABASE_URL: "postgres://postgres:postgres@notification-db:5432/notification_db?sslmode=disable"
+      NATS_URL: "nats://nats:4222"
+      USER_SERVICE_ADDR: "user-service:50052"
+      OTLP_ENDPOINT: "jaeger:4318"
+      # Real SMTP credentials sourced from .env (gitignored). Falls back to MailHog if unset.
+      MAILER_HOST: "${MAILER_HOST:-mailhog}"
+      MAILER_PORT: "${MAILER_PORT:-1025}"
+      MAILER_USERNAME: "${MAILER_USERNAME:-}"
+      MAILER_PASSWORD: "${MAILER_PASSWORD:-}"
+      MAILER_FROM: "${MAILER_FROM:-no-reply@trains.test}"
+      MAILER_TLS: "${MAILER_TLS:-false}"
+    depends_on:
+      notification-db: { condition: service_healthy }
+      nats:            { condition: service_started }
+      mailhog:         { condition: service_started }
+    ports: ["50054:50054"]
+    restart: unless-stopped
+
+  api-gateway:
+    build: { context: ., dockerfile: api-gateway/Dockerfile }
+    environment:
+      GATEWAY_HTTP_ADDR: ":8080"
+      GATEWAY_METRICS_ADDR: ":9095"
+      TRAIN_SERVICE_ADDR: "train-service:50051"
+      USER_SERVICE_ADDR: "user-service:50052"
+      BOOKING_SERVICE_ADDR: "booking-service:50053"
+      NOTIFICATION_SERVICE_ADDR: "notification-service:50054"
+      REDIS_ADDR: "redis:6379"
+      JWT_SECRET: "${JWT_SECRET:-dev-secret-change-me}"
+      RATE_LIMIT_RPM: "${RATE_LIMIT_RPM:-1200}"
+      OTLP_ENDPOINT: "jaeger:4318"
+    depends_on:
+      train-service:        { condition: service_started }
+      user-service:         { condition: service_started }
+      booking-service:      { condition: service_started }
+      notification-service: { condition: service_started }
+      redis:                { condition: service_healthy }
+    ports: ["8080:8080"]
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: "http://localhost:8080"
+    depends_on:
+      api-gateway: { condition: service_started }
+    ports: ["3000:80"]
+    restart: unless-stopped
+
+volumes:
+  train_db_data:
+  user_db_data:
+  booking_db_data:
+  notification_db_data:
+  redis_data:
+  grafana_data:

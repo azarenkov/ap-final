@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package notification.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/azarenkov/ap2-final-gen/notification/v1;notificationv1";
+
+service NotificationService {
+    rpc SendEmail(SendEmailRequest) returns (google.protobuf.Empty);
+    rpc SendBookingConfirmation(SendBookingConfirmationRequest) returns (google.protobuf.Empty);
+    rpc SendBookingCancellation(SendBookingCancellationRequest) returns (google.protobuf.Empty);
+    rpc SendPaymentSuccess(SendPaymentSuccessRequest) returns (google.protobuf.Empty);
+    rpc SendPaymentFailed(SendPaymentFailedRequest) returns (google.protobuf.Empty);
+    rpc SendPasswordResetEmail(SendPasswordResetEmailRequest) returns (google.protobuf.Empty);
+    rpc SendEmailVerification(SendEmailVerificationRequest) returns (google.protobuf.Empty);
+    rpc SendTrainDelayNotification(SendTrainDelayNotificationRequest) returns (google.protobuf.Empty);
+    rpc SendTrainCancellationNotification(SendTrainCancellationNotificationRequest) returns (google.protobuf.Empty);
+    rpc GetNotificationById(GetNotificationByIdRequest) returns (Notification);
+    rpc ListUserNotifications(ListUserNotificationsRequest) returns (ListUserNotificationsResponse);
+    rpc MarkNotificationAsRead(MarkNotificationAsReadRequest) returns (Notification);
+}
+
+message Notification {
+    string id = 1;
+    string user_id = 2;
+    string kind = 3;
+    string subject = 4;
+    string body = 5;
+    bool read = 6;
+    google.protobuf.Timestamp created_at = 7;
+}
+
+message SendEmailRequest { string to = 1; string user_id = 2; string subject = 3; string body = 4; string kind = 5; }
+message SendBookingConfirmationRequest { string to = 1; string user_id = 2; string booking_id = 3; }
+message SendBookingCancellationRequest { string to = 1; string user_id = 2; string booking_id = 3; }
+message SendPaymentSuccessRequest { string to = 1; string user_id = 2; string booking_id = 3; int64 amount_cents = 4; }
+message SendPaymentFailedRequest { string to = 1; string user_id = 2; string booking_id = 3; string reason = 4; }
+message SendPasswordResetEmailRequest { string to = 1; string user_id = 2; string reset_token = 3; }
+message SendEmailVerificationRequest { string to = 1; string user_id = 2; string verify_token = 3; }
+message SendTrainDelayNotificationRequest { string to = 1; string user_id = 2; string train_id = 3; int32 delay_minutes = 4; }
+message SendTrainCancellationNotificationRequest { string to = 1; string user_id = 2; string train_id = 3; }
+
+message GetNotificationByIdRequest { string id = 1; }
+message ListUserNotificationsRequest { string user_id = 1; }
+message ListUserNotificationsResponse { repeated Notification items = 1; }
+message MarkNotificationAsReadRequest { string id = 1; }
