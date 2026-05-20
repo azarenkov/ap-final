@@ -1,0 +1,273 @@
+
+
+.ticket {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    gap: 0;
+    background: var(--paper-2);
+    border: 1px solid var(--paper-line-strong);
+    border-radius: 2px;
+    overflow: hidden;
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+
+.ticket:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(35, 24, 16, 0.1);
+}
+
+.body {
+    padding: 28px 32px;
+    position: relative;
+}
+
+.tearLine {
+    background-image: linear-gradient(to bottom, var(--paper-line-strong) 0, var(--paper-line-strong) 6px, transparent 6px, transparent 12px);
+    background-size: 1px 12px;
+    background-repeat: repeat-y;
+    background-position: center;
+}
+
+.stub {
+    background: var(--paper-3);
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 18px;
+    position: relative;
+}
+
+.stub::before,
+.stub::after {
+    content: "";
+    position: absolute;
+    left: -8px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--paper-line-strong);
+}
+
+.stub::before {
+    top: 24px;
+}
+
+.stub::after {
+    bottom: 24px;
+}
+
+.codeLine {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 18px;
+}
+
+.code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+}
+
+.train {
+    margin-top: 2px;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 18px;
+    color: var(--burgundy);
+}
+
+.route {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 18px;
+    margin: 22px 0;
+}
+
+.station {
+    text-align: left;
+}
+
+.stationRight {
+    text-align: right;
+}
+
+.stationName {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(24px, 3vw, 32px);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    line-height: 1.05;
+}
+
+.stationTime {
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--ink-2);
+}
+
+.stationLabel {
+    margin-top: 2px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+}
+
+.routeMiddle {
+    display: grid;
+    place-items: center;
+    color: var(--burgundy);
+    min-width: 140px;
+}
+
+.routeMiddle .duration {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: var(--ink-2);
+    margin-bottom: 4px;
+}
+
+.routeLine {
+    width: 100%;
+    height: 1px;
+    background: var(--paper-line-strong);
+    position: relative;
+}
+
+.routeLine::before,
+.routeLine::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--burgundy);
+}
+
+.routeLine::before {
+    left: -1px;
+}
+
+.routeLine::after {
+    right: -1px;
+}
+
+.routeIcon {
+    margin-top: 6px;
+    color: var(--burgundy);
+}
+
+.bodyFooter {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px dashed var(--paper-line-strong);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-2);
+}
+
+.bodyFooter strong {
+    color: var(--ink);
+    font-weight: 500;
+}
+
+.stubTop {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stubLabel {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+}
+
+.stubPrice {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 36px;
+    letter-spacing: -0.01em;
+    line-height: 1;
+}
+
+.stubPrice em {
+    font-style: italic;
+    color: var(--burgundy);
+}
+
+.stubBottom {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.stubButton {
+    appearance: none;
+    border: 1px solid var(--burgundy);
+    background: var(--burgundy);
+    color: var(--paper);
+    padding: 10px 14px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border-radius: 0;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.15s var(--ease);
+}
+
+.stubButton:hover {
+    background: var(--burgundy-deep);
+}
+
+.stubLink {
+    border-bottom: 0;
+    text-align: center;
+    color: var(--ink-2);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.stubLink:hover {
+    color: var(--burgundy);
+}
+
+@media (max-width: 720px) {
+    .ticket {
+        grid-template-columns: 1fr;
+    }
+
+    .stub {
+        padding: 22px 24px;
+        border-top: 1px dashed var(--paper-line-strong);
+    }
+
+    .stub::before,
+    .stub::after {
+        display: none;
+    }
+}
