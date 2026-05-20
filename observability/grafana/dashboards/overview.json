@@ -1,0 +1,98 @@
+{
+  "title": "Train Tickets — Overview",
+  "uid": "train-tickets-overview",
+  "tags": ["train-tickets", "ap2-final"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "time": { "from": "now-30m", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "service",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "query": "label_values(go_goroutines, service)",
+        "includeAll": true,
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" },
+        "refresh": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Services up",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "green", "value": 1 } ] } } },
+      "targets": [ { "expr": "count(up == 1)", "refId": "A" } ]
+    },
+    {
+      "type": "stat",
+      "title": "Goroutines (sum)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [ { "expr": "sum(go_goroutines{service=~\"$service\"})", "refId": "A" } ]
+    },
+    {
+      "type": "stat",
+      "title": "Heap in use (MiB)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "decmbytes" } },
+      "targets": [ { "expr": "sum(go_memstats_heap_inuse_bytes{service=~\"$service\"}) / 1048576", "refId": "A" } ]
+    },
+    {
+      "type": "stat",
+      "title": "GC pause (avg ms)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "ms", "decimals": 2 } },
+      "targets": [ { "expr": "avg(go_gc_duration_seconds{quantile=\"0.5\",service=~\"$service\"}) * 1000", "refId": "A" } ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Goroutines per service",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "targets": [ { "expr": "go_goroutines{service=~\"$service\"}", "legendFormat": "{{service}}", "refId": "A" } ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Heap allocations (MiB) per service",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "fieldConfig": { "defaults": { "unit": "decmbytes" } },
+      "targets": [ { "expr": "go_memstats_heap_alloc_bytes{service=~\"$service\"} / 1048576", "legendFormat": "{{service}}", "refId": "A" } ]
+    },
+
+    {
+      "type": "timeseries",
+      "title": "process CPU seconds rate",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "targets": [ { "expr": "rate(process_cpu_seconds_total{service=~\"$service\"}[1m])", "legendFormat": "{{service}}", "refId": "A" } ]
+    },
+    {
+      "type": "timeseries",
+      "title": "process resident memory (MiB)",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "fieldConfig": { "defaults": { "unit": "decmbytes" } },
+      "targets": [ { "expr": "process_resident_memory_bytes{service=~\"$service\"} / 1048576", "legendFormat": "{{service}}", "refId": "A" } ]
+    },
+
+    {
+      "type": "logs",
+      "title": "Service logs (Loki)",
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 20 },
+      "options": { "showTime": true, "wrapLogMessage": true, "sortOrder": "Descending" },
+      "targets": [ { "expr": "{compose_project=\"train-tickets-final\"}", "refId": "A" } ]
+    }
+  ]
+}
