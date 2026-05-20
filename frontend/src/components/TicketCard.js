@@ -1,0 +1,15 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Link } from "react-router-dom";
+import { formatDate, formatDuration, formatPrice, formatTime } from "../lib/format";
+import t from "../styles/ticket.module.css";
+import a from "../styles/app.module.css";
+export function TicketCard({ train, origin = "Origin", destination = "Destination" }) {
+    const badgeCls = train.status === "SCHEDULED"
+        ? a.badgeOk
+        : train.status === "DELAYED"
+            ? a.badgeWarn
+            : train.status === "CANCELLED"
+                ? a.badgeDanger
+                : a.badgeNeutral;
+    return (_jsxs("article", { className: t.ticket, children: [_jsxs("div", { className: t.body, children: [_jsxs("div", { className: t.codeLine, children: [_jsxs("div", { children: [_jsx("div", { className: t.code, children: train.code }), _jsx("div", { className: t.train, children: train.name })] }), _jsx("span", { className: `${a.badge} ${badgeCls}`, children: train.status })] }), _jsxs("div", { className: t.route, children: [_jsxs("div", { className: t.station, children: [_jsx("div", { className: t.stationName, children: origin }), _jsx("div", { className: t.stationTime, children: formatTime(train.departure_time) }), _jsxs("div", { className: t.stationLabel, children: ["departure \u00B7 ", formatDate(train.departure_time)] })] }), _jsxs("div", { className: t.routeMiddle, children: [_jsx("span", { className: t.duration, children: formatDuration(train.departure_time, train.arrival_time) }), _jsx("div", { className: t.routeLine }), _jsx("svg", { className: t.routeIcon, width: "32", height: "14", viewBox: "0 0 32 14", fill: "none", "aria-hidden": true, children: _jsx("path", { d: "M2 7h22M19 2l5 5-5 5", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }) })] }), _jsxs("div", { className: `${t.station} ${t.stationRight}`, children: [_jsx("div", { className: t.stationName, children: destination }), _jsx("div", { className: t.stationTime, children: formatTime(train.arrival_time) }), _jsxs("div", { className: t.stationLabel, children: ["arrival \u00B7 ", formatDate(train.arrival_time)] })] })] }), _jsxs("div", { className: t.bodyFooter, children: [_jsxs("span", { children: ["Seats ", _jsx("strong", { children: train.available_seats }), " / ", train.total_seats] }), _jsx("span", { children: "\u00B7" }), _jsxs("span", { children: ["Route id ", _jsxs("strong", { children: [train.route_id.slice(0, 8), "\u2026"] })] })] })] }), _jsxs("aside", { className: t.stub, children: [_jsxs("div", { className: t.stubTop, children: [_jsx("span", { className: t.stubLabel, children: "fare" }), _jsxs("span", { className: t.stubPrice, children: [_jsx("em", { children: "$" }), formatPrice(train.price_cents)] }), _jsx("span", { className: t.stubLabel, children: "per seat \u00B7 USD" })] }), _jsxs("div", { className: t.stubBottom, children: [_jsx(Link, { to: `/trains/${train.id}`, className: `${t.stubButton} bare`, children: "Reserve \u2192" }), _jsx(Link, { to: `/trains/${train.id}`, className: `${t.stubLink} bare`, children: "view details" })] })] })] }));
+}
