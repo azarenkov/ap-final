@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package user.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/azarenkov/ap2-final-gen/user/v1;userv1";
+
+service UserService {
+    rpc CreateUser(CreateUserRequest) returns (User);
+    rpc LoginUser(LoginUserRequest) returns (LoginUserResponse);
+    rpc LogoutUser(LogoutUserRequest) returns (google.protobuf.Empty);
+    rpc GetUserById(GetUserByIdRequest) returns (User);
+    rpc GetUserProfile(GetUserProfileRequest) returns (User);
+    rpc UpdateUserProfile(UpdateUserProfileRequest) returns (User);
+    rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty);
+    rpc ChangePassword(ChangePasswordRequest) returns (google.protobuf.Empty);
+    rpc ResetPassword(ResetPasswordRequest) returns (google.protobuf.Empty);
+    rpc VerifyEmail(VerifyEmailRequest) returns (google.protobuf.Empty);
+    rpc GetUserBookings(GetUserBookingsRequest) returns (UserBookingsResponse);
+    rpc CheckUserExists(CheckUserExistsRequest) returns (CheckUserExistsResponse);
+}
+
+message User {
+    string id = 1;
+    string email = 2;
+    string full_name = 3;
+    bool verified = 4;
+    google.protobuf.Timestamp created_at = 5;
+}
+
+message CreateUserRequest { string email = 1; string password = 2; string full_name = 3; }
+message LoginUserRequest { string email = 1; string password = 2; }
+message LoginUserResponse {
+    string access_token = 1;
+    google.protobuf.Timestamp expires_at = 2;
+    User user = 3;
+}
+message LogoutUserRequest { string access_token = 1; }
+message GetUserByIdRequest { string id = 1; }
+message GetUserProfileRequest { string access_token = 1; }
+message UpdateUserProfileRequest { string access_token = 1; string full_name = 2; }
+message DeleteUserRequest { string id = 1; }
+message ChangePasswordRequest { string access_token = 1; string old_password = 2; string new_password = 3; }
+message ResetPasswordRequest { string email = 1; }
+message VerifyEmailRequest { string token = 1; }
+message GetUserBookingsRequest { string user_id = 1; }
+message UserBookingsResponse { repeated string booking_ids = 1; }
+message CheckUserExistsRequest { string email = 1; }
+message CheckUserExistsResponse { bool exists = 1; }

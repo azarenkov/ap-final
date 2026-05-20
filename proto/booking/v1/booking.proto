@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package booking.v1;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/azarenkov/ap2-final-gen/booking/v1;bookingv1";
+
+service BookingService {
+    rpc CreateBooking(CreateBookingRequest) returns (Booking);
+    rpc GetBookingById(GetBookingByIdRequest) returns (Booking);
+    rpc GetUserBookings(GetUserBookingsRequest) returns (UserBookings);
+    rpc ListBookings(ListBookingsRequest) returns (UserBookings);
+    rpc CancelBooking(CancelBookingRequest) returns (Booking);
+    rpc ConfirmBooking(ConfirmBookingRequest) returns (Booking);
+    rpc CheckBookingStatus(CheckBookingStatusRequest) returns (BookingStatus);
+    rpc ReserveSeat(ReserveSeatRequest) returns (Booking);
+    rpc ReleaseSeat(ReleaseSeatRequest) returns (Booking);
+    rpc ProcessPaymentMock(ProcessPaymentMockRequest) returns (PaymentResult);
+    rpc GenerateTicket(GenerateTicketRequest) returns (Ticket);
+    rpc RefundBooking(RefundBookingRequest) returns (RefundResult);
+}
+
+message Booking {
+    string id = 1;
+    string user_id = 2;
+    string train_id = 3;
+    int32 seat_count = 4;
+    int64 amount_cents = 5;
+    string status = 6;
+    google.protobuf.Timestamp created_at = 7;
+    google.protobuf.Timestamp updated_at = 8;
+}
+
+message CreateBookingRequest {
+    string user_id = 1;
+    string train_id = 2;
+    int32 seat_count = 3;
+}
+
+message GetBookingByIdRequest { string id = 1; }
+message GetUserBookingsRequest { string user_id = 1; }
+message UserBookings { repeated Booking bookings = 1; }
+message ListBookingsRequest { int32 page = 1; int32 page_size = 2; }
+message CancelBookingRequest { string id = 1; }
+message ConfirmBookingRequest { string id = 1; }
+message CheckBookingStatusRequest { string id = 1; }
+message BookingStatus { string id = 1; string status = 2; }
+
+message ReserveSeatRequest { string train_id = 1; int32 seat_count = 2; }
+message ReleaseSeatRequest { string booking_id = 1; }
+
+message ProcessPaymentMockRequest { string booking_id = 1; }
+message PaymentResult { string booking_id = 1; bool success = 2; string message = 3; }
+
+message GenerateTicketRequest { string booking_id = 1; }
+message Ticket {
+    string id = 1;
+    string booking_id = 2;
+    string code = 3;
+    google.protobuf.Timestamp issued_at = 4;
+}
+
+message RefundBookingRequest { string id = 1; }
+message RefundResult { string booking_id = 1; int64 amount_cents = 2; }
